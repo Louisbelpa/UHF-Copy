@@ -1,0 +1,34 @@
+#EXTM3U url-tvg="http://srv/xmltv.php?username=u&password=p"
+#EXTINF:-1 tvg-id="TF1.fr" tvg-name="TF1" tvg-logo="http://srv/logos/0.png" group-title="FR | Généralistes" catchup="shift" catchup-days="7",FR | TF1 HD
+http://srv/live/u/p/100.m3u8
+#EXTINF:-1 tvg-id="France2.fr" tvg-name="France 2" tvg-logo="http://srv/logos/1.png" group-title="FR | Généralistes",FR | France 2 HD
+http://srv/live/u/p/101.ts
+#EXTINF:-1 tvg-id="France3.fr" tvg-name="France 3" tvg-logo="http://srv/logos/2.png" group-title="FR | Généralistes",FR | France 3 HD
+http://srv/live/u/p/102.ts
+#EXTINF:-1 tvg-id="CanalPlus.fr" tvg-name="Canal+" tvg-logo="http://srv/logos/3.png" group-title="FR | Généralistes" catchup="shift" catchup-days="7",FR | Canal+ HD
+http://srv/live/u/p/103.ts
+#EXTINF:-1 tvg-id="M6.fr" tvg-name="M6" tvg-logo="http://srv/logos/4.png" group-title="FR | Généralistes",FR | M6 HD
+#EXTVLCOPT:http-user-agent=VLC/3.0.20
+http://srv/live/u/p/104.m3u8
+#EXTINF:-1 tvg-id="Arte.fr" tvg-name="Arte" tvg-logo="http://srv/logos/5.png" group-title="FR | Généralistes",FR | Arte HD
+http://srv/live/u/p/105.ts
+#EXTINF:-1 tvg-id="BFMTV.fr" tvg-name="BFM TV" tvg-logo="http://srv/logos/6.png" group-title="FR | Généralistes" catchup="shift" catchup-days="7",FR | BFM TV HD
+http://srv/live/u/p/106.ts
+#EXTINF:-1 tvg-id="CNews.fr" tvg-name="CNews" tvg-logo="http://srv/logos/7.png" group-title="FR | Généralistes",FR | CNews HD
+http://srv/live/u/p/107.ts
+#EXTINF:-1 tvg-id="" tvg-name="RMC Sport 1" tvg-logo="http://srv/logos/8.png" group-title="FR | Sport",FR | RMC Sport 1 HD
+http://srv/live/u/p/108.m3u8
+#EXTINF:-1 tvg-id="" tvg-name="beIN SPORTS 1" tvg-logo="http://srv/logos/9.png" group-title="FR | Sport" catchup="shift" catchup-days="7",FR | beIN SPORTS 1 HD
+http://srv/live/u/p/109.ts
+#EXTINF:-1 tvg-id="Eurosport1.fr" tvg-name="Eurosport 1" tvg-logo="http://srv/logos/10.png" group-title="FR | Sport",FR | Eurosport 1 HD
+http://srv/live/u/p/110.ts
+#EXTINF:-1 tvg-id="TMC.fr" tvg-name="TMC" tvg-logo="http://srv/logos/11.png" group-title="FR | Généralistes",FR | TMC HD
+http://srv/live/u/p/111.ts
+#EXTINF:-1 group-title="FR | XXX",Adulte 1
+http://srv/live/u/p/900.ts
+#EXTINF:-1,Chaîne sans rien
+http://srv/live/u/p/901.ts|User-Agent=Mozilla
+#EXTINF:-1 tvg-id="inconnu.zz",Chaîne hors guide
+http://srv/live/u/p/902.ts
+#EXTINF:-1,Cassée
+

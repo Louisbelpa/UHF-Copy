@@ -426,14 +426,41 @@ Puis déroule les lots.
 
 ---
 
-## 12. Ce que je livrerais ensuite
+## 12. État d'avancement
 
-Dis-moi lequel et je l'écris :
+Le socle non graphique est écrit et testé — **110 tests verts** sous Swift 6.1.
 
-- **A.** Le squelette Xcode complet (packages SPM, GRDB + migrations, cibles iOS/tvOS, CI).
-- **B.** `UHFSources` d'abord : parseur M3U + client Xtream + parseur XMLTV, testés,
-  utilisables en ligne de commande avant toute UI.
-- **C.** Le *spike* de lecture (§11.1), pour valider AVPlayer/VLCKit en deux jours.
+| Livré | Où |
+|---|---|
+| Modèles, `StableKey`, normalisation des libellés | `Packages/UHFCore` |
+| Parseur M3U étendu, lecture en flux | `Packages/UHFSources/M3U` |
+| Client Xtream Codes et décodage tolérant | `Packages/UHFSources/Xtream` |
+| Import XMLTV (SAX + gunzip en flux) | `Packages/UHFSources/XMLTV` |
+| Constructeur d'URLs de catch-up | `Packages/UHFSources/Catchup` |
+| Appariement chaînes ↔ EPG (§8.2) | `Packages/UHFSources/EPG` |
+| Choix du moteur de lecture (§4.1) | `Packages/UHFSources/Playback` |
+| Diagnostic en ligne de commande | `Tools/uhf-probe` |
+| Moteurs AVPlayer / VLCKit | `Packages/UHFPlayback` — **non compilé, exige un Mac** |
 
-Je conseille **C puis B** : le risque technique d'abord, la logique métier ensuite,
-l'UI en dernier.
+Performances mesurées en `release` : M3U 100 000 chaînes en 4,6 s (cible < 5 s),
+XMLTV ~18 Mo/s, soit 200 Mo en une douzaine de secondes (cible < 60 s).
+
+### Ce que le code a corrigé par rapport au plan initial
+
+Sept défauts trouvés par les tests, dont trois qui auraient été coûteux plus tard :
+
+- Les résolutions nues étaient retirées à la normalisation, si bien que
+  « Chaîne 720 » et « Chaîne 1080 » partageaient la même ``StableKey`` — donc les
+  mêmes favoris.
+- `"\r\n"` forme **un seul** `Character` en Swift : `split(separator: "\n")` ne
+  découpait pas les playlists à fins de ligne Windows, qui sont la majorité.
+- Une extension de `HTTPURLResponse` redéfinissant `value(forHTTPHeaderField:)`
+  se serait appelée elle-même indéfiniment sur Darwin, sans que Linux le montre.
+
+### Suite
+
+1. **Le spike de lecture** — `docs/SPIKE.md`, sur Mac, deux jours. Seul risque
+   technique encore ouvert.
+2. **La couche de persistance** — GRDB, schéma du §2, import par lots de 5 000,
+   FTS5 pour la recherche, resync en *merge*.
+3. **Le lot 1** — l'interface iOS, une fois les deux premiers points acquis.

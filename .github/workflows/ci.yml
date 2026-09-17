@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  linux:
+    name: Paquets portables (Linux)
+    runs-on: ubuntu-24.04
+    container: swift:6.1-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      # UHFCore et UHFSources ne dépendent que de Foundation : ils se testent sur
+      # Linux, ce qui donne une CI rapide et gratuite sur 80 % de la logique métier.
+      # UHFPlayback (AVFoundation) et les cibles d'app relèvent du job macOS.
+      - name: UHFCore
+        run: swift test --package-path Packages/UHFCore
+
+      - name: UHFSources
+        run: swift test --package-path Packages/UHFSources
+
+      - name: Performance (release)
+        run: swift test -c release --package-path Packages/UHFSources --filter PerformanceTests
+
+      - name: Outil de diagnostic
+        run: swift build --package-path Tools/uhf-probe
+
+  apple:
+    name: Paquets Apple (macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: UHFPlayback
+        run: swift build --package-path Packages/UHFPlayback
+      # À compléter quand les cibles d'app existeront :
+      # xcodebuild -scheme UHF-iOS  -destination 'platform=iOS Simulator,name=iPhone 16'
+      # xcodebuild -scheme UHF-tvOS -destination 'platform=tvOS Simulator,name=Apple TV 4K'
