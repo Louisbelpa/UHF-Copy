@@ -13,28 +13,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # UHFCore et UHFSources ne dépendent que de Foundation : ils se testent sur
-      # Linux, ce qui donne une CI rapide et gratuite sur 80 % de la logique métier.
-      # UHFPlayback (AVFoundation) et les cibles d'app relèvent du job macOS.
-      - name: UHFCore
-        run: swift test --package-path Packages/UHFCore
+      - name: Outils
+        run: apt-get update && apt-get install -y --no-install-recommends curl unzip gzip
 
-      - name: UHFSources
-        run: swift test --package-path Packages/UHFSources
+      # GRDB utilise sqlite3_snapshot_*, absent de la libsqlite3 d'Ubuntu.
+      # La SQLite d'Apple l'active : ce contournement ne concerne que la CI Linux.
+      - name: SQLite avec SQLITE_ENABLE_SNAPSHOT
+        run: ./Scripts/build-sqlite-linux.sh
+
+      # UHFCore et UHFSources ne dépendent que de Foundation ; UHFStore et UHFSync
+      # ajoutent SQLite. Tous quatre se testent sur Linux, ce qui couvre l'essentiel
+      # de la logique métier avec une CI rapide et gratuite. UHFPlayback
+      # (AVFoundation) et les cibles d'app relèvent du job macOS.
+      - name: Tests
+        run: ./Scripts/test-all.sh
 
       - name: Performance (release)
-        run: swift test -c release --package-path Packages/UHFSources --filter PerformanceTests
-
-      - name: Outil de diagnostic
-        run: swift build --package-path Tools/uhf-probe
+        run: |
+          export LD_LIBRARY_PATH=/opt/sqlite/lib:$LD_LIBRARY_PATH
+          swift test -c release --package-path Packages/UHFSources --filter PerformanceTests
+          swift test -c release --package-path Packages/UHFStore \
+            -Xlinker -L/opt/sqlite/lib --filter StorePerformanceTests
 
   apple:
     name: Paquets Apple (macOS)
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: UHFPlayback
-        run: swift build --package-path Packages/UHFPlayback
+      - name: Compilation de tous les paquets
+        run: |
+          for package in UHFCore UHFSources UHFStore UHFSync UHFPlayback; do
+            echo "════ $package"
+            swift build --package-path "Packages/$package"
+          done
+      - name: Tests
+        run: |
+          for package in UHFCore UHFSources UHFStore UHFSync; do
+            swift test --package-path "Packages/$package"
+          done
       # À compléter quand les cibles d'app existeront :
       # xcodebuild -scheme UHF-iOS  -destination 'platform=iOS Simulator,name=iPhone 16'
       # xcodebuild -scheme UHF-tvOS -destination 'platform=tvOS Simulator,name=Apple TV 4K'

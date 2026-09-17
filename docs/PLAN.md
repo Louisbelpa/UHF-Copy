@@ -428,26 +428,30 @@ Puis déroule les lots.
 
 ## 12. État d'avancement
 
-Le socle non graphique est écrit et testé — **110 tests verts** sous Swift 6.1.
+Toute la logique non graphique est écrite et testée — **173 tests verts** sous
+Swift 6.1. Une source peut être téléchargée, analysée, stockée, resynchronisée,
+recherchée et rapprochée de son guide, sans interface.
 
-| Livré | Où |
-|---|---|
-| Modèles, `StableKey`, normalisation des libellés | `Packages/UHFCore` |
-| Parseur M3U étendu, lecture en flux | `Packages/UHFSources/M3U` |
-| Client Xtream Codes et décodage tolérant | `Packages/UHFSources/Xtream` |
-| Import XMLTV (SAX + gunzip en flux) | `Packages/UHFSources/XMLTV` |
-| Constructeur d'URLs de catch-up | `Packages/UHFSources/Catchup` |
-| Appariement chaînes ↔ EPG (§8.2) | `Packages/UHFSources/EPG` |
-| Choix du moteur de lecture (§4.1) | `Packages/UHFSources/Playback` |
-| Diagnostic en ligne de commande | `Tools/uhf-probe` |
-| Moteurs AVPlayer / VLCKit | `Packages/UHFPlayback` — **non compilé, exige un Mac** |
+| Livré | Où | Tests |
+|---|---|---|
+| Modèles, `StableKey`, normalisation | `Packages/UHFCore` | 14 |
+| Parseur M3U étendu, lecture en flux | `Packages/UHFSources/M3U` | — |
+| Client Xtream Codes, décodage tolérant | `Packages/UHFSources/Xtream` | — |
+| Import XMLTV (SAX + gunzip en flux) | `Packages/UHFSources/XMLTV` | — |
+| Catch-up, appariement EPG (§8.2), choix du moteur (§4.1) | `Packages/UHFSources` | 96 au total |
+| Persistance, resync, FTS5, guide, favoris | `Packages/UHFStore` | 47 |
+| Orchestration d'un rafraîchissement complet | `Packages/UHFSync` | 16 |
+| Diagnostic en ligne de commande | `Tools/uhf-probe` | — |
+| Moteurs AVPlayer / VLCKit | `Packages/UHFPlayback` | **non compilé, exige un Mac** |
 
-Performances mesurées en `release` : M3U 100 000 chaînes en 4,6 s (cible < 5 s),
-XMLTV ~18 Mo/s, soit 200 Mo en une douzaine de secondes (cible < 60 s).
+Performances en `release` : M3U 100 000 chaînes analysées en 4,6 s puis écrites en
+base en 4,8 s ; XMLTV à ~18 Mo/s ; recherche FTS5 de 15 à 67 ms ; now/next sur une
+page de 60 chaînes en 13,5 ms.
 
 ### Ce que le code a corrigé par rapport au plan initial
 
-Sept défauts trouvés par les tests, dont trois qui auraient été coûteux plus tard :
+Onze défauts trouvés par les tests. Les plus coûteux s'ils avaient atteint la
+production :
 
 - Les résolutions nues étaient retirées à la normalisation, si bien que
   « Chaîne 720 » et « Chaîne 1080 » partageaient la même ``StableKey`` — donc les
@@ -456,11 +460,33 @@ Sept défauts trouvés par les tests, dont trois qui auraient été coûteux plu
   découpait pas les playlists à fins de ligne Windows, qui sont la majorité.
 - Une extension de `HTTPURLResponse` redéfinissant `value(forHTTPHeaderField:)`
   se serait appelée elle-même indéfiniment sur Darwin, sans que Linux le montre.
+- `${utc}` laissait un `$` orphelin, la substitution de `{utc}` passant en premier.
+- `previousChannelCount` n'était renseigné qu'après le premier lot d'import, donc
+  faux pour toute playlist de moins de 5 000 chaînes.
 
-### Suite
+### Ce qui reste
 
-1. **Le spike de lecture** — `docs/SPIKE.md`, sur Mac, deux jours. Seul risque
-   technique encore ouvert.
-2. **La couche de persistance** — GRDB, schéma du §2, import par lots de 5 000,
-   FTS5 pour la recherche, resync en *merge*.
-3. **Le lot 1** — l'interface iOS, une fois les deux premiers points acquis.
+Le chiffrage initial était de ~72 jours-homme jusqu'à une v1. Il en reste **~45**,
+et ils sont presque tous sur Mac.
+
+| Lot | Reste | Estimation |
+|---|---|---|
+| 0 · Fondations | projet Xcode, cibles iOS/tvOS, TestFlight | ~3 j |
+| 1 · MVP iOS live | **toute l'interface** : listes, recherche, lecteur, favoris | ~9 j |
+| 2 · EPG | grille temporelle, fiche programme, notifications, `BGAppRefreshTask` | ~5 j |
+| 3 · Apple TV | tout (focus engine, 10-foot UI, Top Shelf) | ~14 j |
+| 4 · VOD & séries | affiches, saisons, « continuer à regarder » | ~4 j |
+| 5 · Finition | PiP, AirPlay, écran de correspondance EPG, diagnostic | ~5 j |
+| 6 · Monétisation & sync | StoreKit 2, paywall, CloudKit (`exportUserData` est prêt) | ~8 j |
+
+Plus le lot 7 (Jellyfin/Plex/Emby, Trakt, Chromecast, macOS, visionOS, DVR, VPN) et
+les préparatifs App Store du §9, à faire **avant** la première soumission.
+
+### Ordre d'attaque
+
+1. **Le spike de lecture** — `docs/SPIKE.md`, deux jours. Seul risque technique
+   encore ouvert, et seule chose qui puisse encore invalider un choix d'architecture.
+2. **Le projet Xcode** et le premier écran iOS branché sur `PlaylistSyncService`.
+   Toute la mécanique est là : l'écran n'a qu'à appeler `refresh` et afficher
+   `ChannelStore.channels(...)`.
+3. **tvOS**, une fois iOS solide.

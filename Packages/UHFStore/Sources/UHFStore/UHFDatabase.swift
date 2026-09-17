@@ -77,6 +77,15 @@ public struct MergeReport: Sendable, Equatable {
     public var previousTotal = 0
     public var duration: TimeInterval = 0
 
+    public init(added: Int = 0, updated: Int = 0, removed: Int = 0,
+                previousTotal: Int = 0, duration: TimeInterval = 0) {
+        self.added = added
+        self.updated = updated
+        self.removed = removed
+        self.previousTotal = previousTotal
+        self.duration = duration
+    }
+
     public var total: Int { added + updated }
     public var isEmpty: Bool { added == 0 && updated == 0 && removed == 0 }
 
