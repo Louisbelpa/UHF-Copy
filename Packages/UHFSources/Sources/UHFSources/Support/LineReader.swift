@@ -20,7 +20,14 @@ public final class LineReader {
     }
 
     private let stream: InputStream
-    private var buffer = Data()
+    private var buffer = [UInt8]()
+    /// Position de lecture dans `buffer`.
+    ///
+    /// Consommer une ligne par `removeFirst` décalerait tout le tampon à chaque appel,
+    /// soit un `memmove` de plusieurs dizaines de kilo-octets par ligne — de loin le
+    /// premier poste de coût à l'import d'une grosse playlist. On avance donc un index,
+    /// et on ne compacte le tampon que lorsque la partie consommée devient majoritaire.
+    private var cursor = 0
     private var chunk = [UInt8](repeating: 0, count: 64 * 1024)
     private var exhausted = false
     private var didStripBOM = false
@@ -42,16 +49,18 @@ public final class LineReader {
         while true {
             if let line = takeBufferedLine() { return line }
             guard !exhausted else {
-                guard !buffer.isEmpty else { return nil }
-                let rest = buffer
-                buffer.removeAll(keepingCapacity: false)
-                return decode(rest)
+                guard cursor < buffer.count else { return nil }
+                let rest = decode(buffer[cursor...])
+                cursor = buffer.count
+                return rest
             }
             try fill()
         }
     }
 
     private func fill() throws {
+        compactIfNeeded()
+
         let read = stream.read(&chunk, maxLength: chunk.count)
         if read < 0 {
             throw Failure.readFailed(stream.streamError?.localizedDescription ?? "erreur inconnue")
@@ -62,35 +71,37 @@ public final class LineReader {
         }
         buffer.append(contentsOf: chunk[0..<read])
 
-        if !didStripBOM, buffer.count >= 3 {
+        if !didStripBOM, buffer.count - cursor >= 3 {
             didStripBOM = true
-            if buffer[buffer.startIndex] == 0xEF,
-               buffer[buffer.index(buffer.startIndex, offsetBy: 1)] == 0xBB,
-               buffer[buffer.index(buffer.startIndex, offsetBy: 2)] == 0xBF {
-                buffer.removeFirst(3)
+            if buffer[cursor] == 0xEF, buffer[cursor + 1] == 0xBB, buffer[cursor + 2] == 0xBF {
+                cursor += 3
             }
         }
     }
 
-    private func takeBufferedLine() -> String? {
-        guard let newline = buffer.firstIndex(of: 0x0A) else {
-            // Un `\r` seul (fins de ligne Mac historiques) ne clôt une ligne que si on
-            // est certain qu'aucun `\n` ne le suit, donc seulement en fin de flux.
-            guard exhausted, let cr = buffer.firstIndex(of: 0x0D) else { return nil }
-            let line = buffer[buffer.startIndex..<cr]
-            buffer.removeSubrange(buffer.startIndex...cr)
-            return decode(line)
-        }
-        var end = newline
-        if end > buffer.startIndex, buffer[buffer.index(before: end)] == 0x0D {
-            end = buffer.index(before: end)
-        }
-        let line = buffer[buffer.startIndex..<end]
-        buffer.removeSubrange(buffer.startIndex...newline)
-        return decode(line)
+    private func compactIfNeeded() {
+        guard cursor > 0, cursor * 2 >= buffer.count else { return }
+        buffer.removeFirst(cursor)
+        cursor = 0
     }
 
-    private func decode<C: DataProtocol>(_ bytes: C) -> String {
+    private func takeBufferedLine() -> String? {
+        guard let newline = buffer[cursor...].firstIndex(of: 0x0A) else {
+            // Un `\r` seul (fins de ligne Mac historiques) ne clôt une ligne que si on
+            // est certain qu'aucun `\n` ne le suit, donc seulement en fin de flux.
+            guard exhausted, let cr = buffer[cursor...].firstIndex(of: 0x0D) else { return nil }
+            let line = decode(buffer[cursor..<cr])
+            cursor = cr + 1
+            return line
+        }
+        var end = newline
+        if end > cursor, buffer[end - 1] == 0x0D { end -= 1 }
+        let line = decode(buffer[cursor..<end])
+        cursor = newline + 1
+        return line
+    }
+
+    private func decode(_ bytes: ArraySlice<UInt8>) -> String {
         let data = Data(bytes)
         // Les playlists mal encodées (latin-1) ne doivent pas faire échouer l'import :
         // on dégrade au lieu de jeter la ligne.
