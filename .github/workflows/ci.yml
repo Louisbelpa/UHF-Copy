@@ -42,13 +42,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compilation de tous les paquets
         run: |
-          for package in UHFCore UHFSources UHFStore UHFSync UHFPlayback; do
+          for package in UHFCore UHFSources UHFStore UHFSync UHFViewModels UHFPlayback; do
             echo "════ $package"
             swift build --package-path "Packages/$package"
           done
       - name: Tests
         run: |
-          for package in UHFCore UHFSources UHFStore UHFSync; do
+          for package in UHFCore UHFSources UHFStore UHFSync UHFViewModels; do
             swift test --package-path "Packages/$package"
           done
       # À compléter quand les cibles d'app existeront :

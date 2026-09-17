@@ -11,7 +11,7 @@ Plex / Jellyfin / Emby.
 
 ## État
 
-Toute la logique non graphique est écrite et testée : **173 tests verts** (Swift 6.1).
+Toute la logique non graphique est écrite et testée : **200 tests verts** (Swift 6.1).
 Une source peut être téléchargée, analysée, stockée, resynchronisée, recherchée et
 rapprochée de son guide — sans interface. C'est délibéré : voir `docs/SPIKE.md`.
 
@@ -21,11 +21,13 @@ rapprochée de son guide — sans interface. C'est délibéré : voir `docs/SPIK
 | `Packages/UHFSources` | M3U, Xtream, XMLTV, catch-up, appariement EPG, choix du moteur | ✅ 96 tests |
 | `Packages/UHFStore` | Persistance GRDB/SQLite, resync, FTS5, guide, favoris | ✅ 47 tests |
 | `Packages/UHFSync` | Orchestration : téléchargement → analyse → base → appariement | ✅ 16 tests |
+| `Packages/UHFViewModels` | Logique d'interface : pagination, anti-rebond, états | ✅ 27 tests |
 | `Packages/UHFPlayback` | Moteurs `AVPlayer` / `VLCKit` et leur arbitrage | ⚠️ non compilé (exige un Mac) |
 | `Tools/uhf-probe` | Diagnostic en ligne de commande | ✅ compilé |
 
-**Ce qui manque pour avoir une app : l'interface.** Aucun projet Xcode, aucune vue
-SwiftUI, aucune cible iOS ou tvOS. Le détail de ce qui reste est en fin de
+**Ce qui manque pour avoir une app : les vues SwiftUI.** La logique d'écran est
+écrite et testée ; il reste à la dessiner. `project.yml` génère le projet Xcode en
+une commande (`brew install xcodegen && xcodegen generate`). Le détail est en fin de
 `docs/PLAN.md`.
 
 ## Démarrage
@@ -61,7 +63,18 @@ report.epgMatchRate    // part de chaînes rattachées au guide
 report.warnings        // abonnement bientôt expiré, films indisponibles…
 ```
 
-Puis, côté lecture :
+Puis, côté écran — la logique est déjà là, la vue n'a qu'à l'afficher :
+
+```swift
+let model = ChannelListModel(database: database, playlistID: playlist.id)
+model.filter = .group("FR | Sport")
+model.loadNextPage()            // pagination par 100
+model.rows.first?.displayName   // nom personnalisé s'il y en a un
+model.rows.first?.now?.title    // programme en cours, déjà joint
+model.rows.first?.progress()    // avancement, pour la barre
+```
+
+Ou directement contre la base :
 
 ```swift
 let store = ChannelStore(database)

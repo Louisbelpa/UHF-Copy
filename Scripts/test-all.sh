@@ -17,7 +17,7 @@ if [[ "$(uname)" == "Linux" ]]; then
   fi
 fi
 
-for package in Packages/UHFCore Packages/UHFSources Packages/UHFStore Packages/UHFSync; do
+for package in Packages/UHFCore Packages/UHFSources Packages/UHFStore Packages/UHFSync Packages/UHFViewModels; do
   echo ""
   echo "════ $package ($CONFIG)"
   swift test -c "$CONFIG" --package-path "$package" "${LINKER_FLAGS[@]}"

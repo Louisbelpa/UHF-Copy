@@ -1,0 +1,95 @@
+# Génère le projet Xcode : `brew install xcodegen && xcodegen generate`
+#
+# Le projet n'est pas versionné, seule cette description l'est : un .pbxproj est
+# illisible en revue et produit un conflit à chaque modification parallèle.
+
+name: UHF
+options:
+  bundleIdPrefix: com.example.uhf
+  deploymentTarget:
+    iOS: "17.0"
+    tvOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  UHFCore:      { path: Packages/UHFCore }
+  UHFSources:   { path: Packages/UHFSources }
+  UHFStore:     { path: Packages/UHFStore }
+  UHFSync:      { path: Packages/UHFSync }
+  UHFPlayback:  { path: Packages/UHFPlayback }
+  UHFViewModels: { path: Packages/UHFViewModels }
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  UHF-iOS:
+    type: application
+    platform: iOS
+    sources: [Apps/iOS]
+    dependencies:
+      - package: UHFCore
+      - package: UHFSources
+      - package: UHFStore
+      - package: UHFSync
+      - package: UHFPlayback
+      - package: UHFViewModels
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.uhf
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: >-
+          UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft
+          UIInterfaceOrientationLandscapeRight
+        # Indispensable au Picture-in-Picture et à la lecture écran éteint.
+        INFOPLIST_KEY_UIBackgroundModes: audio
+    info:
+      path: Apps/iOS/Info.plist
+      properties:
+        CFBundleDisplayName: UHF
+        # La quasi-totalité des serveurs IPTV sont en HTTP simple. À justifier à la
+        # revue App Store : l'app se connecte à des serveurs fournis par
+        # l'utilisateur, dont elle ne contrôle pas la configuration TLS.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSUserNotificationsUsageDescription: >-
+          Pour vous prévenir avant le début des programmes dont vous demandez un rappel.
+
+  UHF-tvOS:
+    type: application
+    platform: tvOS
+    sources: [Apps/tvOS]
+    dependencies:
+      - package: UHFCore
+      - package: UHFSources
+      - package: UHFStore
+      - package: UHFSync
+      - package: UHFPlayback
+      - package: UHFViewModels
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.uhf.tv
+        INFOPLIST_KEY_UIBackgroundModes: audio
+    info:
+      path: Apps/tvOS/Info.plist
+      properties:
+        CFBundleDisplayName: UHF
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+
+schemes:
+  UHF-iOS:
+    build:
+      targets: { UHF-iOS: all }
+    run:
+      config: Debug
+  UHF-tvOS:
+    build:
+      targets: { UHF-tvOS: all }
+    run:
+      config: Debug

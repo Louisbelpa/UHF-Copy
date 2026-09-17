@@ -428,7 +428,7 @@ Puis déroule les lots.
 
 ## 12. État d'avancement
 
-Toute la logique non graphique est écrite et testée — **173 tests verts** sous
+Toute la logique non graphique est écrite et testée — **200 tests verts** sous
 Swift 6.1. Une source peut être téléchargée, analysée, stockée, resynchronisée,
 recherchée et rapprochée de son guide, sans interface.
 
@@ -441,6 +441,8 @@ recherchée et rapprochée de son guide, sans interface.
 | Catch-up, appariement EPG (§8.2), choix du moteur (§4.1) | `Packages/UHFSources` | 96 au total |
 | Persistance, resync, FTS5, guide, favoris | `Packages/UHFStore` | 47 |
 | Orchestration d'un rafraîchissement complet | `Packages/UHFSync` | 16 |
+| Logique d'interface : pagination, anti-rebond, favoris, renommage | `Packages/UHFViewModels` | 27 |
+| Description du projet Xcode (XcodeGen) | `project.yml` | — |
 | Diagnostic en ligne de commande | `Tools/uhf-probe` | — |
 | Moteurs AVPlayer / VLCKit | `Packages/UHFPlayback` | **non compilé, exige un Mac** |
 
@@ -466,13 +468,13 @@ production :
 
 ### Ce qui reste
 
-Le chiffrage initial était de ~72 jours-homme jusqu'à une v1. Il en reste **~45**,
-et ils sont presque tous sur Mac.
+Le chiffrage initial était de ~72 jours-homme jusqu'à une v1. Il en reste **~42**,
+et ils sont tous sur Mac.
 
 | Lot | Reste | Estimation |
 |---|---|---|
 | 0 · Fondations | projet Xcode, cibles iOS/tvOS, TestFlight | ~3 j |
-| 1 · MVP iOS live | **toute l'interface** : listes, recherche, lecteur, favoris | ~9 j |
+| 1 · MVP iOS live | **les vues SwiftUI** : listes, recherche, lecteur (la logique d'écran est faite) | ~6 j |
 | 2 · EPG | grille temporelle, fiche programme, notifications, `BGAppRefreshTask` | ~5 j |
 | 3 · Apple TV | tout (focus engine, 10-foot UI, Top Shelf) | ~14 j |
 | 4 · VOD & séries | affiches, saisons, « continuer à regarder » | ~4 j |
@@ -486,7 +488,7 @@ les préparatifs App Store du §9, à faire **avant** la première soumission.
 
 1. **Le spike de lecture** — `docs/SPIKE.md`, deux jours. Seul risque technique
    encore ouvert, et seule chose qui puisse encore invalider un choix d'architecture.
-2. **Le projet Xcode** et le premier écran iOS branché sur `PlaylistSyncService`.
-   Toute la mécanique est là : l'écran n'a qu'à appeler `refresh` et afficher
-   `ChannelStore.channels(...)`.
+2. **`xcodegen generate`**, puis les vues du premier écran iOS. Toute la mécanique
+   est là : `PlaylistSyncService.refresh` pour l'import, `ChannelListModel` pour la
+   liste, `SearchModel` pour la recherche. Les vues sont de l'habillage.
 3. **tvOS**, une fois iOS solide.
